@@ -1,0 +1,107 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-03-11",
+  "description": "Golden prompt set for Simple Chat regression checks (structure, citations, endpoint coverage, coherence).",
+  "cases": [
+    {
+      "id": "tnbc_neoadj_core_en",
+      "question": "triple negative breast cancer neoadjuvant chemotherapy",
+      "options": { "recency": "last_3_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "tnbc_neoadj_core_typo",
+      "question": "triple negative breast cancer neadjuvant chemotherapy",
+      "options": { "recency": "last_3_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "tnbc_neoadj_pt",
+      "question": "cancro da mama triplo negativo quimioterapia neoadjuvante eficácia e segurança",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "pt" }
+    },
+    {
+      "id": "tnbc_ici_combo",
+      "question": "TNBC neoadjuvant pembrolizumab plus chemotherapy pCR EFS safety",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "conservative", "language": "en" }
+    },
+    {
+      "id": "tnbc_platinum",
+      "question": "early TNBC neoadjuvant platinum chemotherapy long-term outcomes DFS OS toxicity",
+      "options": { "recency": "last_10_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "breast_hr_her2_negative",
+      "question": "ER positive HER2 negative early breast cancer pembrolizumab neoadjuvant chemotherapy trial evidence",
+      "options": { "recency": "last_3_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "nsclc_pd_l1_firstline",
+      "question": "first line metastatic NSCLC pembrolizumab platinum chemotherapy PD-L1 overall survival progression free survival safety",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "conservative", "language": "en" }
+    },
+    {
+      "id": "crc_firstline",
+      "question": "metastatic colorectal cancer first line triplet versus doublet efficacy toxicity randomized trials",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "ovarian_parp_maintenance",
+      "question": "ovarian cancer BRCA PARP inhibitor maintenance PFS OS adverse events comparative evidence",
+      "options": { "recency": "last_10_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "melanoma_adjuvant",
+      "question": "resected melanoma adjuvant immunotherapy recurrence free survival overall survival safety comparison",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "conservative", "language": "en" }
+    },
+    {
+      "id": "hrplus_mbc_adc",
+      "question": "HR positive HER2 negative metastatic breast cancer trastuzumab deruxtecan versus sacituzumab govitecan comparative efficacy and safety",
+      "options": { "recency": "last_3_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "headneck_rcc",
+      "question": "recurrent metastatic head and neck squamous cell carcinoma pembrolizumab regimen overall survival response rate toxicity",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "prostate_mcrpc",
+      "question": "metastatic castration resistant prostate cancer first line novel hormonal agents versus docetaxel comparative evidence",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "hcc_firstline",
+      "question": "advanced hepatocellular carcinoma first line atezolizumab bevacizumab versus sorafenib overall survival progression free survival safety",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "conservative", "language": "en" }
+    },
+    {
+      "id": "bladder_perioperative",
+      "question": "muscle invasive bladder cancer perioperative immunotherapy neoadjuvant pathologic complete response event-free survival",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "gastric_perioperative",
+      "question": "resectable gastric cancer perioperative chemotherapy regimens FLOT comparative survival toxicity evidence",
+      "options": { "recency": "last_10_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "pnl_lung_targeted",
+      "question": "resected EGFR mutated NSCLC adjuvant osimertinib disease free survival overall survival safety",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "conservative", "language": "en" }
+    },
+    {
+      "id": "cervical_recurrent",
+      "question": "recurrent metastatic cervical cancer pembrolizumab chemotherapy bevacizumab trial efficacy safety",
+      "options": { "recency": "last_5_years", "detailLevel": "detailed", "evidenceMode": "balanced", "language": "en" }
+    },
+    {
+      "id": "simple_quick_mode",
+      "question": "TNBC neoadjuvant chemotherapy key trial signal quick review",
+      "options": { "recency": "last_3_years", "detailLevel": "executive", "evidenceMode": "balanced", "language": "en", "quickStudyOnly": true }
+    },
+    {
+      "id": "pt_quick_mode",
+      "question": "tnbc neoadjuvante resumo rápido de ensaios e segurança",
+      "options": { "recency": "last_3_years", "detailLevel": "executive", "evidenceMode": "balanced", "language": "pt", "quickStudyOnly": true }
+    }
+  ]
+}

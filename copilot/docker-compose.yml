@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      # Copy values from your .env file or set via shell environment
+      JWT_SECRET: ${JWT_SECRET}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3004}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-anthropic.claude-3-5-sonnet-20241022-v2:0}
+      BEDROCK_MAX_TOKENS: ${BEDROCK_MAX_TOKENS:-5000}
+      BEDROCK_TEMPERATURE: ${BEDROCK_TEMPERATURE:-0.1}
+      NCBI_API_KEY: ${NCBI_API_KEY}
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_HOST: ${PINECONE_HOST}
+      FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT}
+      TRIAL_REGISTRY_STORE: sqlite
+      TRIAL_REGISTRY_SQLITE_PATH: /app/data/trial_registry.sqlite
+      TRIAL_REGISTRY_LOCATION: ${TRIAL_REGISTRY_LOCATION:-Portugal}
+      TRIAL_REGISTRY_SYNC_ON_BOOT: "true"
+      TRIAL_REGISTRY_SYNC_STALE_HOURS: "168"
+      ENABLE_PUBMED: "true"
+      ENABLE_TRIAL_REGISTRY_SYNC: "true"
+      # INFARMED Reimbursement (Portugal drug access)
+      INFARMED_REIMBURSEMENT_ENABLED: "true"
+      INFARMED_STORE: sqlite
+      INFARMED_SQLITE_PATH: /app/data/infarmed_reimbursement.sqlite
+      INFARMED_SYNC_ON_BOOT: "true"
+      INFARMED_STALE_HOURS: "744"
+      INFARMED_SYNC_SCHEDULE: "0 4 1 * *"
+      INFARMED_SYNC_TIMEZONE: Europe/Lisbon
+      INFARMED_LLM_EXTRACTION: "true"
+      INFARMED_INCLUDE_INFOMED: "true"
+      INFARMED_INCLUDE_PAP: "true"
+      INFARMED_INCLUDE_TRANSPARENCIA: "true"
+    volumes:
+      # Persist SQLite trial registry across container restarts
+      - trial_registry_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  trial_registry_data:

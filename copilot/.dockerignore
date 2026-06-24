@@ -1,0 +1,12 @@
+**/node_modules
+**/.env
+**/logs
+**/*.log
+frontend/dist
+backend/data
+backend/firebase-service-account.json
+backend/public
+.git
+.gitignore
+docs
+README.md

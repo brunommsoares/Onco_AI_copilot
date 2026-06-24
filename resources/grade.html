@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,200;1,9..144,300;1,9..144,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<title>GRADE Methodology — SilverCancer</title>
+<meta name="description" content="The evidence grading system behind every SilverCancer synthesis.">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:#080E1A;color:#8FA8BE;font-family:'DM Sans',system-ui,sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+:root{
+  --ink:#080E1A;--deep:#0D1525;--lift:#111E32;
+  --edge:rgba(255,255,255,0.07);--edge-h:rgba(255,255,255,0.13);
+  --cream:#E8E2D8;--body:#8FA8BE;--dim:#4A6478;
+  --teal:#2CC4BE;--teal-g:rgba(44,196,190,0.12);
+  --serif:'Fraunces',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;
+}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(24px,5vw,80px);background:rgba(8,14,26,0.82);backdrop-filter:blur(24px);border-bottom:1px solid var(--edge);transition:background 0.4s;}
+nav.on{background:rgba(5,10,18,0.97);}
+.nlogo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nmark{width:30px;height:30px;border-radius:7px;background:var(--cream);padding:3px;overflow:hidden;}
+.nmark img{width:100%;height:100%;object-fit:contain;display:block;}
+.nname{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--cream);}
+.nlinks{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:40px;}
+.nlinks a{font-size:13px;color:var(--dim);text-decoration:none;transition:color 0.2s;}
+.nlinks a:hover,.nlinks a.on{color:var(--cream);}
+.ncta{background:var(--teal);color:var(--ink);padding:8px 18px;border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:600;text-decoration:none;transition:opacity 0.2s,transform 0.15s;}
+.ncta:hover{opacity:0.85;transform:translateY(-1px);}
+.burger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px;}
+.burger span{display:block;width:20px;height:1.5px;background:var(--cream);}
+.mob{display:none;position:fixed;top:60px;left:0;right:0;z-index:199;background:rgba(5,10,18,0.98);backdrop-filter:blur(20px);padding:24px clamp(24px,5vw,80px) 32px;flex-direction:column;gap:0;border-bottom:1px solid var(--edge);}
+.mob.on{display:flex;}
+.mob a{font-size:17px;color:var(--body);text-decoration:none;padding:12px 0;border-bottom:1px solid var(--edge);}
+.mob .ncta{margin-top:16px;text-align:center;display:block;border-bottom:none;}
+@media(max-width:820px){.nlinks{display:none;}.burger{display:flex;}}
+footer{padding:60px clamp(24px,5vw,80px) 44px;background:var(--deep);border-top:1px solid var(--edge);}
+.ft{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:44px;padding-bottom:44px;border-bottom:1px solid var(--edge);}
+.ft-brand p{font-size:13px;color:var(--dim);max-width:220px;line-height:1.7;margin-top:14px;}
+.ft-col h4{font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:16px;}
+.ft-col a{display:block;font-size:13px;color:var(--dim);text-decoration:none;margin-bottom:9px;transition:color 0.2s;}
+.ft-col a:hover{color:var(--cream);}
+.ftb{max-width:1200px;margin:32px auto 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+.ftb p,.fteu{font-size:12px;color:var(--dim);opacity:0.5;}
+.fteu b{color:var(--teal);opacity:1;font-weight:400;}
+@media(max-width:640px){.ft{flex-direction:column;}.ftb{flex-direction:column;text-align:center;}}
+.slbl{display:block;font-size:10px;font-weight:600;letter-spacing:0.26em;text-transform:uppercase;color:var(--teal);margin-bottom:18px;}
+.sh{font-family:var(--serif);font-size:clamp(32px,4vw,54px);font-weight:300;line-height:1.1;color:var(--cream);letter-spacing:-0.02em;margin-bottom:20px;}
+.sh em{font-style:italic;color:var(--teal);}
+.rv{opacity:0;transform:translateY(26px);transition:opacity 0.72s ease,transform 0.72s ease;}
+.rv.in{opacity:1;transform:none;}
+.d1{transition-delay:0.1s;}.d2{transition-delay:0.2s;}.d3{transition-delay:0.3s;}
+.btn-p{display:inline-block;background:var(--teal);color:var(--ink);padding:13px 30px;border-radius:7px;font-family:var(--sans);font-size:14px;font-weight:600;text-decoration:none;letter-spacing:0.03em;transition:opacity 0.2s,transform 0.15s;}
+.btn-p:hover{opacity:0.87;transform:translateY(-1px);}
+.btn-g{display:inline-block;background:transparent;border:1px solid var(--edge-h);color:var(--cream);padding:13px 30px;border-radius:7px;font-family:var(--sans);font-size:14px;font-weight:300;text-decoration:none;transition:border-color 0.2s;}
+.btn-g:hover{border-color:rgba(255,255,255,0.28);}
+.phero{padding:clamp(120px,13vw,160px) clamp(24px,6vw,80px) clamp(72px,8vw,96px);background:var(--ink);border-bottom:1px solid var(--edge);}
+.phero-lbl{display:block;font-size:11px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--teal);margin-bottom:22px;}
+.phero h1{font-family:var(--serif);font-size:clamp(40px,6vw,80px);font-weight:300;line-height:1.05;color:var(--cream);letter-spacing:-0.02em;margin-bottom:20px;}
+.phero h1 em{font-style:italic;color:var(--teal);font-weight:200;}
+.phero p{font-size:17px;font-weight:300;color:var(--body);line-height:1.78;max-width:580px;}
+.sec{padding:clamp(80px,10vw,120px) clamp(24px,6vw,80px);}
+.inner{max-width:1100px;margin:0 auto;}
+.rule{height:1px;background:var(--edge);}
+
+.rw{max-width:1100px;margin:0 auto;padding:64px clamp(24px,5vw,80px) 100px;display:grid;grid-template-columns:200px 1fr;gap:clamp(40px,5vw,72px);align-items:start;}
+.rtoc{position:sticky;top:80px;}
+.rtoc h4{font-size:9.5px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;}
+.rtoc a{display:block;font-size:12.5px;color:var(--dim);text-decoration:none;padding:7px 0 7px 14px;border-left:2px solid var(--edge);margin-bottom:1px;transition:border-color 0.2s,color 0.2s;}
+.rtoc a:hover{border-left-color:var(--teal);color:var(--cream);}
+.rtoc .also{margin-top:24px;padding-top:20px;border-top:1px solid var(--edge);}
+.rtoc .also a{border-left:none;padding-left:0;font-size:12px;}
+.rb h2{font-family:var(--serif);font-size:clamp(20px,2.4vw,28px);font-weight:600;color:var(--cream);margin:52px 0 16px;padding-top:52px;border-top:1px solid var(--edge);}
+.rb h2:first-of-type{border-top:none;margin-top:0;padding-top:0;}
+.rb h3{font-size:15.5px;font-weight:600;color:var(--cream);margin:26px 0 10px;}
+.rb p{font-size:15px;color:var(--dim);line-height:1.88;margin-bottom:16px;}
+.rb ul,.rb ol{margin:0 0 16px 22px;}
+.rb li{font-size:14.5px;color:var(--dim);line-height:1.8;margin-bottom:7px;}
+.rb strong{color:var(--cream);font-weight:500;}.rb em{font-style:italic;}
+.rb a{color:var(--teal);text-decoration:none;}
+.rb a:hover{text-decoration:underline;}
+.gt{width:100%;border-collapse:collapse;margin:16px 0 26px;font-size:13.5px;}
+.gt th{background:var(--lift);color:var(--cream);font-weight:600;padding:11px 14px;text-align:left;border-bottom:1.5px solid var(--edge-h);font-size:12px;}
+.gt td{padding:11px 14px;border-bottom:1px solid var(--edge);color:var(--dim);vertical-align:top;}
+.gt tr:last-child td{border-bottom:none;}
+.gb{display:inline-block;padding:3px 9px;border-radius:3px;font-size:10.5px;font-weight:600;letter-spacing:0.05em;}
+.g-h{background:rgba(44,196,190,0.12);color:var(--teal);}
+.g-m{background:rgba(255,193,7,0.1);color:#C9A227;}
+.g-l{background:rgba(255,152,0,0.1);color:#B87020;}
+.g-v{background:rgba(244,67,54,0.09);color:#B85050;}
+.co{background:rgba(44,196,190,0.07);border-left:3px solid var(--teal);padding:18px 24px;margin:22px 0;border-radius:0 8px 8px 0;}
+.co p{margin-bottom:0;color:#A8C8D8;font-size:14px;}
+.co strong{color:var(--teal);}
+@media(max-width:820px){.rw{grid-template-columns:1fr;}.rtoc{display:none;}}
+</style>
+</head>
+<body>
+<nav><a href="/" class="nlogo"><div class="nmark"><img src="/assets/logo.jpg" alt="SC"></div><span class="nname">SilverCancer</span></a><div class="nlinks"><a href="/copilot/">Copilot</a><a href="/about.html">About</a><a href="/resources/grade.html" class="on">Resources</a></div><a href="/copilot/" class="ncta">Open Copilot</a><button class="burger" onclick="tg()"><span></span><span></span><span></span></button></nav>
+<div class="mob" id="mb"><a href="/copilot/">Copilot</a><a href="/about.html">About</a><a href="/resources/grade.html">Resources</a><a href="/copilot/" class="ncta">Open Copilot</a></div>
+<section class="phero rv"><span class="phero-lbl">Resources</span><h1>GRADE Methodology</h1><p>The evidence grading system behind every SilverCancer synthesis.</p></section><div class="rule"></div><div style="background:var(--ink);"><div class="rw"><div class="rtoc"><h4>Contents</h4><a href="#what">What is GRADE?</a><a href="#cert">Certainty levels</a><a href="#domains">Rating domains</a><a href="#recs">Recommendation strength</a><a href="#sc">How SilverCancer uses GRADE</a><a href="#esmo">GRADE and ESMO</a><div class="also"><h4 style="margin-bottom:10px;">Also</h4><a href="/resources/esmo.html">ESMO guidelines</a><a href="/resources/euctr.html">EU trial registries</a><a href="/resources/docs.html">Documentation</a></div></div><div class="rb rv"><h2 id="what">What is GRADE?</h2>
+  <p><strong>GRADE</strong> (Grading of Recommendations Assessment, Development and Evaluation) is the internationally accepted framework for evaluating the quality of evidence and the strength of recommendations. Used by WHO, ESMO, EAN, Cochrane and most major oncology guideline bodies, it makes the basis of recommendations explicit and auditable.</p>
+  <p>GRADE addresses two distinct questions separately: <em>how certain are we about the evidence?</em> and <em>how strong should the recommendation be?</em> Conflating them is common and consequential.</p>
+  <div class="co"><p><strong>Why it matters:</strong> Oncology decisions involve complex trade-offs between uncertain evidence, significant toxicity and patient values. GRADE makes certainty explicit — which is essential when AI synthesises the evidence.</p></div>
+  <h2 id="cert">Certainty levels</h2>
+  <table class="gt"><tr><th>Level</th><th>Symbol</th><th>Meaning</th><th>Typical sources</th></tr>
+  <tr><td><span class="gb g-h">HIGH</span></td><td>⊕⊕⊕⊕</td><td>Very confident the true effect is close to the estimate.</td><td>Well-conducted RCTs with consistent results</td></tr>
+  <tr><td><span class="gb g-m">MODERATE</span></td><td>⊕⊕⊕◯</td><td>Moderately confident. A substantially different effect is possible.</td><td>RCTs with some limitations; upgraded observational studies</td></tr>
+  <tr><td><span class="gb g-l">LOW</span></td><td>⊕⊕◯◯</td><td>Limited confidence. The true effect may be substantially different.</td><td>Observational studies; RCTs with serious limitations</td></tr>
+  <tr><td><span class="gb g-v">VERY LOW</span></td><td>⊕◯◯◯</td><td>Very little confidence. True effect likely substantially different.</td><td>Case series, expert opinion, very indirect evidence</td></tr></table>
+  <h2 id="domains">Rating domains</h2>
+  <h3>Factors that lower certainty (from RCTs)</h3>
+  <ul><li><strong>Risk of bias</strong> — poor allocation concealment, lack of blinding, high dropout</li><li><strong>Inconsistency</strong> — unexplained heterogeneity (high I²)</li><li><strong>Indirectness</strong> — different populations, interventions or outcomes</li><li><strong>Imprecision</strong> — wide confidence intervals, few events</li><li><strong>Publication bias</strong></li></ul>
+  <h3>Factors that can raise certainty (observational studies)</h3>
+  <ul><li><strong>Large effect size</strong> — RR &gt;2 or &lt;0.5, no plausible confounding</li><li><strong>Dose-response gradient</strong> with clear biological plausibility</li></ul>
+  <h2 id="recs">Recommendation strength</h2>
+  <p>GRADE distinguishes <strong>strong recommendations</strong> from <strong>conditional recommendations</strong>. Strength reflects the balance of benefits versus harms, patient values and resource use — not just evidence certainty. A conditional recommendation with high-certainty evidence means the trade-offs are context-dependent, not that the evidence is weak.</p>
+  <h2 id="sc">How SilverCancer uses GRADE</h2>
+  <p>Every synthesis includes an explicit GRADE certainty rating with the reasoning behind it. We do not hide uncertainty.</p>
+  <div class="co"><p><strong>Limitation:</strong> SilverCancer's GRADE assessments are AI-generated to support clinical reasoning — not produced by a formal guideline panel. For definitive assessments refer to the relevant ESMO CPG or Cochrane review directly.</p></div>
+  <h2 id="esmo">GRADE and ESMO guidelines</h2>
+  <p>ESMO CPGs use evidence levels I–V and recommendation grades A–E. SilverCancer maps both to GRADE certainty categories and displays them together. Where they diverge, this is noted. Further reading: <a href="https://www.gradeworkinggroup.org" target="_blank" rel="noopener">gradeworkinggroup.org</a> · <a href="https://www.esmo.org/guidelines" target="_blank" rel="noopener">ESMO Clinical Practice Guidelines</a></p></div></div></div>
+<footer>
+  <div class="ft">
+    <div class="ft-brand"><a href="/" class="nlogo" style="text-decoration:none;"><div class="nmark"><img src="/assets/logo.jpg" alt="SC"></div><span class="nname">SilverCancer</span></a><p>Oncology AI that adapts to where you practice.</p></div>
+    <div class="ft-col"><h4>Product</h4><a href="/copilot/">Copilot</a><a href="/#demo">See it in action</a><a href="/#caps">Capabilities</a><a href="/#markets">Markets</a></div>
+    <div class="ft-col"><h4>Resources</h4><a href="/resources/grade.html">GRADE methodology</a><a href="/resources/esmo.html">ESMO guidelines</a><a href="/resources/euctr.html">EU trial registries</a><a href="/resources/docs.html">Documentation</a></div>
+    <div class="ft-col"><h4>Company</h4><a href="/about.html">About</a><a href="/privacy.html">Privacy policy</a><a href="/terms.html">Terms of use</a><a href="mailto:hello@silvercancer.com">hello@silvercancer.com</a></div>
+  </div>
+  <div class="ftb"><p>© 2026 SilverCancer. All rights reserved.</p><div class="fteu">GDPR compliant &nbsp;·&nbsp; <b>silvercancer.com</b></div></div>
+</footer>
+<script>
+(function(){
+  const n=document.querySelector('nav');
+  window.addEventListener('scroll',()=>n?.classList.toggle('on',scrollY>24),{passive:true});
+  window.tg=()=>document.getElementById('mb')?.classList.toggle('on');
+  document.querySelectorAll('.mob a').forEach(a=>a.addEventListener('click',()=>document.getElementById('mb')?.classList.remove('on')));
+  const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target);}});},{threshold:0.08,rootMargin:'0px 0px -36px 0px'});
+  document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+})();
+</script>
+</body>
+</html>

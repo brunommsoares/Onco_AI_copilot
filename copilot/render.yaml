@@ -1,0 +1,57 @@
+services:
+  - type: web
+    name: silvercancer
+    runtime: node
+    rootDir: .
+    buildCommand: |
+      cd frontend && npm ci && npm run build && cp -r dist ../backend/public
+      cd ../backend && npm ci --omit=dev
+    startCommand: node backend/src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000           # Render assigns this automatically
+      - key: JWT_SECRET
+        generateValue: true    # Render generates a random secret
+      - key: ALLOWED_ORIGINS
+        value: https://silvercancer.onrender.com   # change to your domain
+      - key: AWS_REGION
+        value: us-east-1
+      - key: AWS_ACCESS_KEY_ID
+        sync: false            # Set manually in Render dashboard
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: BEDROCK_MODEL_ID
+        value: anthropic.claude-3-5-sonnet-20241022-v2:0
+      - key: BEDROCK_MAX_TOKENS
+        value: "5000"
+      - key: BEDROCK_TEMPERATURE
+        value: "0.1"
+      - key: NCBI_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_HOST
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false            # Paste full JSON string of service account
+      - key: TRIAL_REGISTRY_STORE
+        value: sqlite
+      - key: TRIAL_REGISTRY_SQLITE_PATH
+        value: /var/data/trial_registry.sqlite
+      - key: TRIAL_REGISTRY_LOCATION
+        value: Portugal
+      - key: TRIAL_REGISTRY_SYNC_ON_BOOT
+        value: "true"
+      - key: TRIAL_REGISTRY_SYNC_STALE_HOURS
+        value: "168"
+      - key: ENABLE_PUBMED
+        value: "true"
+      - key: ENABLE_TRIAL_REGISTRY_SYNC
+        value: "true"
+    disk:
+      name: trial-registry
+      mountPath: /var/data
+      sizeGB: 1

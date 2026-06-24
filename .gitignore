@@ -1,0 +1,35 @@
+# ---- Dependencies ----
+node_modules/
+
+# ---- Secrets / environment ----
+.env
+.env.*
+!.env.example
+!.env.production.example
+**/firebase-service-account.json
+
+# ---- Claude Code local config (may contain machine paths / hosts) ----
+.claude/
+
+# ---- Logs ----
+logs/
+*.log
+
+# ---- Build output ----
+dist/
+**/backend/public/
+
+# ---- Local data: large and/or third-party copyrighted (do NOT commit) ----
+**/data/*
+!**/data/README.md
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.pdf
+*.xlsx
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,30 @@
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+logs/
+backend/logs/
+frontend/dist/
+backend/public/
+
+.env
+backend/.env
+frontend/.env
+*.env.local
+
+*.log
+backend/tmp_server*.log
+
+# Firebase credentials — pass via FIREBASE_SERVICE_ACCOUNT env var in production
+backend/firebase-service-account.json
+firebase-service-account.json
+
+# SQLite database (persisted via volume in production)
+backend/data/*.sqlite
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

@@ -1,0 +1,26 @@
+{
+  "name": "simple-oncology-chat",
+  "version": "1.0.0",
+  "description": "Simple AI + PubMed chat for oncology questions",
+  "type": "module",
+  "main": "src/simpleServer.js",
+  "scripts": {
+    "start": "node src/simpleServer.js",
+    "dev": "nodemon src/simpleServer.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.500.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "node-fetch": "^3.3.2",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
