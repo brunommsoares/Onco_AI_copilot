@@ -602,7 +602,10 @@ class InfarmedReimbursementService {
           drugsFound: matchedDrugs.length,
           indicationsFound: indications.length,
           medinovEntriesFound: medinovEntries.length,
-          dataSource: medinovEntries.length > 0 ? 'infarmed_scraped+medinov' : 'infarmed_scraped',
+          // Report the actual provenance of the matched records (e.g. curated_seed,
+          // aue_benefit) rather than a blanket "scraped" label — oncology coverage
+          // currently comes from the curated seed dataset, not the live scraper.
+          dataSource: this._describeProvenance(matchedDrugs, medinovEntries),
           lastSync: (await this._store.getLastSyncRun())?.completed_at || null
         }
       };
@@ -613,6 +616,21 @@ class InfarmedReimbursementService {
   }
 
   // ---- search helpers ------------------------------------------------------
+
+  /**
+   * Honest provenance label for a result set, built from the source tags the
+   * matched drug records actually carry (curated_seed, aue_benefit, pap, ...).
+   */
+  _describeProvenance(matchedDrugs = [], medinovEntries = []) {
+    const tags = new Set();
+    for (const drug of matchedDrugs) {
+      for (const source of (drug.sources || [])) tags.add(source);
+    }
+    const parts = [];
+    parts.push(tags.size ? `infarmed:${[...tags].sort().join('+')}` : 'infarmed');
+    if (medinovEntries.length > 0) parts.push('medinov');
+    return parts.join('+');
+  }
 
   _extractSearchTerms(params) {
     return extractClinicalTerms(params);

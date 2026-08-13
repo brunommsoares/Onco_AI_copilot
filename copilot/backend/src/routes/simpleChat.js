@@ -9,10 +9,7 @@ import emaService from '../services/emaService.js';
 import esmoGuidelinesService from '../services/esmoGuidelinesService.js';
 import { extractClinicalTerms } from '../services/clinicalTermExtractor.js';
 import { buildUnifiedDrugContext } from '../services/unifiedDrugContext.js';
-import GradeAssessmentAgent from '../services/simple-chat/GradeAssessmentAgent.js';
 import ClinicalQuestionClassifier from '../services/simple-chat/ClinicalQuestionClassifier.js';
-import { openai as bedrockOpenAI } from '../config/openai.js';
-import { parseBoolean } from '../config/runtimeEnv.js';
 
 const questionClassifier = new ClinicalQuestionClassifier();
 
@@ -157,35 +154,11 @@ router.post('/', validateQuestion, async (req, res, next) => {
 
     const result = chatResult;
 
-    // GRADE assessment — run with a tight timeout so it doesn't delay the response
-    let gradeAssessment = { available: false, certainty_of_evidence: null };
-    if (parseBoolean(process.env.ENABLE_GRADE_ASSESSMENT, false) && result.success && (result.references || []).length > 0) {
-      try {
-        const gradeAgent = new GradeAssessmentAgent({
-          openai: bedrockOpenAI,
-          logger
-        });
-        const gradePromise = gradeAgent.assess(
-          question,
-          result.references || [],
-          result.metadata?.evidenceSelection?.evidenceSummaries || [],
-          {
-            population: normalizedOptions.population || '',
-            intervention: normalizedOptions.intervention || '',
-            comparator: normalizedOptions.comparator || ''
-          }
-        );
-        // 8s timeout — if GRADE takes longer, return without it
-        const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 8000));
-        const gradeResult = await Promise.race([gradePromise, timeout]);
-        if (gradeResult) {
-          gradeAssessment = gradeResult;
-          gradeAssessment.available = true;
-        }
-      } catch (gradeErr) {
-        logger.warn(`GRADE assessment failed: ${gradeErr.message}`);
-      }
-    }
+    // GRADE assessment is produced inside simpleChatService BEFORE synthesis
+    // (see runGradeAssessment), so that the certainty rating is injected into
+    // the synthesis prompt rather than appended afterwards. The route only
+    // surfaces the result.
+    const gradeAssessment = result.gradeAssessment || { available: false, certainty_of_evidence: null };
 
     if (result.success) {
       // Build combined references: PubMed articles + institutional sources
@@ -204,17 +177,26 @@ router.post('/', validateQuestion, async (req, res, next) => {
         });
       }
 
-      // Add ESMO guidelines as source references
+      // Add guideline documents as source references, attributed to the body
+      // that actually issued them (the corpus contains both ESMO and NCCN PDFs)
       if (esmoGuidelines.available && esmoGuidelines.recommendations?.length) {
         const guidelineTitles = [...new Set(esmoGuidelines.recommendations.map(r => r.guidelineTitle).filter(Boolean))];
         for (const title of guidelineTitles.slice(0, 5)) {
           const recs = esmoGuidelines.recommendations.filter(r => r.guidelineTitle === title);
+          const publisher = recs.find(r => r.publisher)?.publisher || '';
+          const label = publisher === 'NCCN'
+            ? `NCCN Clinical Practice Guidelines — ${title}`
+            : publisher === 'ESMO'
+              ? `ESMO Clinical Practice Guidelines — ${title}`
+              : `Clinical practice guideline — ${title}`;
           allReferences.push({
-            id: `esmo_${title.replace(/\s+/g, '_').slice(0, 30).toLowerCase()}`,
-            source: 'ESMO',
+            id: `guideline_${title.replace(/\s+/g, '_').slice(0, 30).toLowerCase()}`,
+            source: publisher || 'Guideline',
             type: 'guideline',
-            title: `ESMO Clinical Practice Guidelines — ${title}`,
-            url: 'https://www.esmo.org/guidelines',
+            title: label,
+            url: publisher === 'NCCN'
+              ? 'https://www.nccn.org/guidelines'
+              : publisher === 'ESMO' ? 'https://www.esmo.org/guidelines' : '',
             description: `${recs.length} recommendation(s)`,
             recommendations: recs.map(r => {
               const parts = [r.drug, r.cancerType, r.biomarker, r.lineOfTherapy].filter(Boolean).join(' | ');

@@ -7,9 +7,11 @@ import { GRADE_ASSESSMENT_PROMPT, GRADE_CONTEXT_TEMPLATE } from './gradePrompts.
 // EndpointClaimAgent and PublicationExtractionAgent and maps it to the
 // formal GRADE framework (certainty of evidence assessment).
 //
-// Called from the chat route after evidence retrieval, before response
-// generation. Produces structured output + a context string for prompt
-// injection.
+// Called from simpleChatService.runGradeAssessment after evidence retrieval and
+// before response generation, on both the streaming and non-streaming paths.
+// Produces structured output + a context string (contextSummary) that is passed
+// to buildGenerateResponsePrompts via options.gradeContext, so the certainty
+// rating is an input to the synthesis rather than an annotation on it.
 // ---------------------------------------------------------------------------
 
 const GRADE_MODEL =

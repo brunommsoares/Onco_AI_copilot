@@ -7,9 +7,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test tests/runtimeEnv.test.js tests/appHealth.test.mjs tests/authMiddleware.test.mjs tests/evidenceSelectionService.test.mjs tests/pdfProcessingService.test.mjs tests/simpleChatEngineSelector.test.mjs tests/simpleChatService.test.mjs tests/trialRegistryService.test.mjs tests/simpleChatRoute.trialRegistry.test.mjs",
+    "test": "node --test tests/runtimeEnv.test.js tests/appHealth.test.mjs tests/authMiddleware.test.mjs tests/evidenceSelectionService.test.mjs tests/gradeAssessment.test.mjs tests/pdfProcessingService.test.mjs tests/simpleChatEngineSelector.test.mjs tests/simpleChatService.test.mjs tests/trialRegistryService.test.mjs tests/simpleChatRoute.trialRegistry.test.mjs",
     "test:config": "node --test tests/runtimeEnv.test.js",
-    "test:watch": "node --test --watch tests/runtimeEnv.test.js tests/appHealth.test.mjs tests/authMiddleware.test.mjs tests/evidenceSelectionService.test.mjs tests/pdfProcessingService.test.mjs tests/simpleChatEngineSelector.test.mjs tests/simpleChatService.test.mjs tests/trialRegistryService.test.mjs tests/simpleChatRoute.trialRegistry.test.mjs",
+    "test:watch": "node --test --watch tests/runtimeEnv.test.js tests/appHealth.test.mjs tests/authMiddleware.test.mjs tests/evidenceSelectionService.test.mjs tests/gradeAssessment.test.mjs tests/pdfProcessingService.test.mjs tests/simpleChatEngineSelector.test.mjs tests/simpleChatService.test.mjs tests/trialRegistryService.test.mjs tests/simpleChatRoute.trialRegistry.test.mjs",
     "regression:simple-chat": "node scripts/runSimpleChatRegression.mjs",
     "trial-registry:sync": "node scripts/runTrialRegistrySync.mjs",
     "lint": "eslint src/",

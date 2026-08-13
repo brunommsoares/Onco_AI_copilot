@@ -36,13 +36,24 @@ import { toast } from "react-hot-toast";
 import { Toaster } from "react-hot-toast";
 import { useSettings } from "../contexts/SettingsContext";
 import { useAuth } from "../contexts/AuthContext";
-import { dbConversations } from "../services/firebase";
+import { auth, dbConversations } from "../services/firebase";
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 
 // API service — derive from current location in production, use localhost in dev
 const API_BASE_URL = process.env.NODE_ENV === "production"
   ? `${window.location.protocol}//${window.location.host}`
   : "http://localhost:3004";
+
+// Bearer header with the signed-in user's Firebase ID token. The clinical data
+// routes verify it server-side (backend dataRouteAuth); anonymous callers get 401.
+const buildAuthHeaders = async () => {
+  try {
+    const token = await auth.currentUser?.getIdToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+};
 
 // UUID helper
 const uuid = () =>
@@ -907,6 +918,91 @@ const sanitizeStructuredLines = (lines = []) => {
   });
 };
 
+// ── GRADE certainty presentation ───────────────────────────────────────────
+// The backend returns a single overall GRADE certainty rating plus the five
+// domain judgements that produced it (see GradeAssessmentAgent). The rating is
+// computed before synthesis and is also woven into the answer text; this panel
+// exposes the reasoning behind it, mirroring a GRADE evidence profile.
+const GRADE_LABELS = {
+  pt: {
+    heading: "Certeza da evidência (GRADE)",
+    why: "Porquê esta certeza",
+    caveat: "Classificação GRADE-informada, gerada automaticamente. Não substitui a avaliação de um metodologista.",
+    certainty: { high: "Alta", moderate: "Moderada", low: "Baixa", very_low: "Muito baixa" },
+    domains: {
+      risk_of_bias: "Risco de viés",
+      inconsistency: "Inconsistência",
+      indirectness: "Evidência indirecta",
+      imprecision: "Imprecisão",
+      publication_bias: "Viés de publicação"
+    },
+    ratings: {
+      no_serious: "sem problemas graves",
+      serious: "grave",
+      very_serious: "muito grave",
+      undetected: "não detectado",
+      strongly_suspected: "fortemente suspeito"
+    }
+  },
+  en: {
+    heading: "Certainty of evidence (GRADE)",
+    why: "Why this certainty",
+    caveat: "GRADE-informed rating, generated automatically. Not a substitute for assessment by a trained methodologist.",
+    certainty: { high: "High", moderate: "Moderate", low: "Low", very_low: "Very low" },
+    domains: {
+      risk_of_bias: "Risk of bias",
+      inconsistency: "Inconsistency",
+      indirectness: "Indirectness",
+      imprecision: "Imprecision",
+      publication_bias: "Publication bias"
+    },
+    ratings: {
+      no_serious: "no serious concerns",
+      serious: "serious",
+      very_serious: "very serious",
+      undetected: "undetected",
+      strongly_suspected: "strongly suspected"
+    }
+  }
+};
+
+const gradeLocale = (language) => GRADE_LABELS[language === "pt" ? "pt" : "en"];
+
+const formatGradeCertainty = (certainty, language) => {
+  const locale = gradeLocale(language);
+  return locale.certainty[certainty] || String(certainty || "").replace(/_/g, " ");
+};
+
+const getGradeCertaintyClass = (certainty) => {
+  switch (certainty) {
+    case "high": return "bg-teal-100 text-teal-800";
+    case "moderate": return "bg-sky-100 text-sky-800";
+    case "low": return "bg-amber-100 text-amber-800";
+    case "very_low": return "bg-rose-100 text-rose-800";
+    default: return "bg-slate-200 text-slate-700";
+  }
+};
+
+const buildGradeDomainRows = (assessment, language) => {
+  const domains = assessment?.domains;
+  if (!domains || typeof domains !== "object") return [];
+  const locale = gradeLocale(language);
+  return Object.keys(locale.domains)
+    .map((key) => {
+      const domain = domains[key];
+      if (!domain) return null;
+      const rating = String(domain.rating || "");
+      return {
+        key,
+        label: locale.domains[key],
+        ratingLabel: locale.ratings[rating] || rating,
+        serious: rating === "serious" || rating === "very_serious" || rating === "strongly_suspected",
+        rationale: String(domain.rationale || "").trim()
+      };
+    })
+    .filter(Boolean);
+};
+
 const sanitizeStructuredPayload = (structured) => {
   if (!structured || typeof structured !== "object") return null;
 
@@ -1039,6 +1135,11 @@ const MessageComponent = ({ message, onCopy, onRegenerate, isLast }) => {
   const recentCount = profile?.years?.recentCount;
   const sampleMedian = profile?.sampleSize?.median;
   const summaryLanguage = structured?.language || message.settings?.language || "en";
+  // GRADE certainty produced before synthesis (see simpleChatService.runGradeAssessment)
+  const gradeAssessment = structured?.gradeAssessment || message.gradeAssessment || null;
+  const gradeCertainty = gradeAssessment?.certainty_of_evidence || null;
+  const gradeSummaryText = String(gradeAssessment?.summary || "").trim();
+  const gradeDomainRows = buildGradeDomainRows(gradeAssessment, summaryLanguage);
   const synthesis = structured?.synthesis || null;
   const evidenceCards = Array.isArray(structured?.evidenceCards) ? structured.evidenceCards : [];
   const engine = String(message.engine || "").trim();
@@ -1108,7 +1209,7 @@ const MessageComponent = ({ message, onCopy, onRegenerate, isLast }) => {
       setExporting(exportKey);
       const response = await fetch(`${API_BASE_URL}/api/export`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await buildAuthHeaders()) },
         body: JSON.stringify({
           format,
           template,
@@ -1183,6 +1284,44 @@ const MessageComponent = ({ message, onCopy, onRegenerate, isLast }) => {
           )}
           {readinessReasons.length > 0 && (
             <p className="mt-2 text-xs text-slate-600">{readinessReasons.join(" • ")}</p>
+          )}
+        </div>
+      )}
+
+      {gradeCertainty && (
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {GRADE_LABELS[summaryLanguage === "pt" ? "pt" : "en"].heading}
+            </span>
+            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getGradeCertaintyClass(gradeCertainty)}`}>
+              {formatGradeCertainty(gradeCertainty, summaryLanguage)}
+            </span>
+          </div>
+          {gradeSummaryText && (
+            <p className="mt-2 text-sm text-slate-700">{gradeSummaryText}</p>
+          )}
+          {gradeDomainRows.length > 0 && (
+            <details className="mt-2 group">
+              <summary className="cursor-pointer list-none text-xs font-semibold text-teal-700 hover:text-teal-800">
+                {GRADE_LABELS[summaryLanguage === "pt" ? "pt" : "en"].why}
+                <span className="ml-1 inline-block transition-transform group-open:rotate-90">›</span>
+              </summary>
+              <ul className="mt-2 space-y-1">
+                {gradeDomainRows.map((domain) => (
+                  <li key={domain.key} className="flex flex-wrap items-baseline gap-2 text-xs">
+                    <span className="min-w-[9rem] font-medium text-slate-700">{domain.label}</span>
+                    <span className={`rounded px-1.5 py-0.5 font-semibold ${domain.serious ? "bg-amber-100 text-amber-800" : "bg-slate-200 text-slate-700"}`}>
+                      {domain.ratingLabel}
+                    </span>
+                    {domain.rationale && <span className="text-slate-600">{domain.rationale}</span>}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[11px] italic text-slate-500">
+                {GRADE_LABELS[summaryLanguage === "pt" ? "pt" : "en"].caveat}
+              </p>
+            </details>
           )}
         </div>
       )}
@@ -2068,7 +2207,9 @@ const SimpleChat = () => {
       if (source.trialPhases.length > 0) params.set("phases", source.trialPhases.join(","));
       if (source.regions.length > 0) params.set("regions", source.regions.join(","));
 
-      const response = await fetch(`${API_BASE_URL}/api/trial-registry/search?${params.toString()}`);
+      const response = await fetch(`${API_BASE_URL}/api/trial-registry/search?${params.toString()}`, {
+        headers: await buildAuthHeaders()
+      });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Falha na pesquisa do registo de ensaios");
@@ -2224,7 +2365,7 @@ const SimpleChat = () => {
       abortControllerRef.current = new AbortController();
       const response = await fetch(`${API_BASE_URL}/api/simple-chat/stream`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await buildAuthHeaders()) },
         body: requestBody,
         signal: abortControllerRef.current.signal
       });
@@ -2297,7 +2438,10 @@ const SimpleChat = () => {
                               engine: selectedEngine,
                               references: dedupeReferences(event.references || []),
                               evidenceAdequacy: event.evidenceAdequacy || null,
-                              structured: null,
+                              gradeAssessment: event.gradeAssessment || null,
+                              structured: event.gradeAssessment
+                                ? { readiness: event.evidenceAdequacy || null, gradeAssessment: event.gradeAssessment }
+                                : null,
                               warnings: Array.isArray(event.warnings) ? event.warnings : []
                             }
                           : m

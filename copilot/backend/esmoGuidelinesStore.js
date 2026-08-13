@@ -213,7 +213,7 @@ const createSQLiteStore = (options, logger) => {
 
     async searchRecommendations({ cancerType, biomarker, lineOfTherapy, drug, substance, limit = 50 }) {
       const database = await getDb();
-      let sql = 'SELECT r.*, g.title as guideline_title, g.version as guideline_version FROM recommendations r JOIN guidelines g ON r.guideline_id = g.id WHERE 1=1';
+      let sql = 'SELECT r.*, g.title as guideline_title, g.version as guideline_version, g.payload as guideline_payload FROM recommendations r JOIN guidelines g ON r.guideline_id = g.id WHERE 1=1';
       const params = {};
 
       if (cancerType) {

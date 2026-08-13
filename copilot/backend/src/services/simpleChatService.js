@@ -11,6 +11,7 @@ import TrialFamilyAgent from './simple-chat/TrialFamilyAgent.js';
 import EndpointJudgeAgent from './simple-chat/EndpointJudgeAgent.js';
 import PublicationExtractionAgent from './simple-chat/PublicationExtractionAgent.js';
 import ClinicalQuestionClassifier from './simple-chat/ClinicalQuestionClassifier.js';
+import GradeAssessmentAgent from './simple-chat/GradeAssessmentAgent.js';
 
 class SimpleChatService {
   constructor() {
@@ -162,9 +163,60 @@ class SimpleChatService {
     // term extraction, claim repair. ~500-800 tok/s vs ~80 tok/s on Bedrock.
     // Falls back to Bedrock automatically if Groq is unavailable.
     this.fastModel = createFastModelRouter(this.openai);
+    // GRADE certainty agent — runs after evidence assembly and before synthesis,
+    // so its rating can be injected into the synthesis prompt (see runGradeAssessment).
+    this.gradeAgent = new GradeAssessmentAgent({ openai: this.openai, logger });
     logger.info(
       `Primary model: Bedrock/${config.bedrock?.model} | Fast model: Groq/${config.groq?.model || 'llama-3.3-70b-versatile'}`
     );
+  }
+
+  /**
+   * Run the GRADE certainty assessment over the assembled evidence.
+   *
+   * Called from both processQuestion and processQuestionStream AFTER evidence
+   * assembly and BEFORE the synthesis prompt is built, so that the resulting
+   * certainty rating is an input to the answer rather than a post-hoc annotation.
+   * The returned contextSummary is injected via options.gradeContext, which
+   * buildGenerateResponsePrompts appends to the user message.
+   *
+   * Returns null when disabled, when there is no evidence, or on timeout —
+   * callers must treat a null assessment as "no rating available".
+   */
+  async runGradeAssessment(question, articles = [], evidenceSummaries = [], options = {}) {
+    if (!config.external?.enableGradeAssessment) return null;
+    if (!this.gradeAgent) return null;
+    if (!articles.length && !evidenceSummaries.length) return null;
+
+    const timeoutMs = Number(config.external?.gradeAssessmentTimeoutMs) || 12000;
+    const started = Date.now();
+
+    try {
+      const assessment = await Promise.race([
+        this.gradeAgent.assess(question, articles, evidenceSummaries, {
+          population: options.population || '',
+          intervention: options.intervention || '',
+          comparator: options.comparator || ''
+        }),
+        new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs))
+      ]);
+
+      if (!assessment) {
+        logger.warn(`[GRADE] Assessment timed out after ${timeoutMs}ms — proceeding without a certainty rating`);
+        return null;
+      }
+      if (!assessment.certainty_of_evidence) {
+        logger.info(`[GRADE] No certainty produced: ${assessment.reason || 'unknown reason'}`);
+        return null;
+      }
+
+      assessment.available = true;
+      logger.info(`[GRADE] ${assessment.certainty_of_evidence} certainty in ${Date.now() - started}ms (pre-synthesis)`);
+      return assessment;
+    } catch (err) {
+      logger.warn(`[GRADE] Assessment failed: ${err.message}`);
+      return null;
+    }
   }
 
   normalizeClinicalTypos(text = '') {
@@ -6000,6 +6052,13 @@ ${options.unifiedRegulatoryContext ? `\n\n${options.unifiedRegulatoryContext}` :
       }
 
       // Generate AI response based on ranked articles + evidence summaries
+      // GRADE certainty assessment — before synthesis, so the rating is an input
+      // to the answer rather than a post-hoc annotation on it.
+      if (onProgress) onProgress({ stage: 'grading', message: 'Assessing certainty of evidence (GRADE)...' });
+      const gradeAssessment = await this.runGradeAssessment(
+        standaloneQuestion, contextArticles, evidenceSummaries, options
+      );
+
       if (onProgress) onProgress({ stage: 'generating', message: 'Generating clinical synthesis...' });
       logger.info('Generating AI response...');
       let response = await this.generateResponse(
@@ -6014,7 +6073,8 @@ ${options.unifiedRegulatoryContext ? `\n\n${options.unifiedRegulatoryContext}` :
           originalQuestion: question,
           standaloneQuestion,
           responseLanguage,
-          quickStats
+          quickStats,
+          gradeContext: gradeAssessment?.contextSummary || ''
         }
       );
       // Deterministic quality guardrails only — no LLM refinement pass.
@@ -6042,6 +6102,7 @@ ${options.unifiedRegulatoryContext ? `\n\n${options.unifiedRegulatoryContext}` :
         references: response.references,
         warnings,
         evidenceAdequacy,
+        gradeAssessment: gradeAssessment || null,
         followUpQuestions: Array.isArray(response.followUpQuestions) ? response.followUpQuestions : [],
         articlesFound: articles.length,
         metadata: {
@@ -6055,6 +6116,8 @@ ${options.unifiedRegulatoryContext ? `\n\n${options.unifiedRegulatoryContext}` :
           quickStats,
           evidenceSelection: selectionTrace,
           evidenceAdequacy,
+          gradeAvailable: !!gradeAssessment,
+          gradeCertainty: gradeAssessment?.certainty_of_evidence || null,
           architecture: this.getArchitectureMetadata()
         }
       };
@@ -6481,6 +6544,14 @@ Return ONLY a JSON array of 3 short question strings (no explanations, no markdo
         return;
       }
 
+      // ── Phase 1b: GRADE certainty assessment (before synthesis) ────────
+      // Runs on the assembled evidence so the certainty rating is an input to
+      // the answer, not an annotation on it.
+      onProgress({ stage: 'grading', message: 'Assessing certainty of evidence (GRADE)...' });
+      const gradeAssessment = await this.runGradeAssessment(
+        standaloneQuestion, contextArticles, evidenceSummaries, options
+      );
+
       // ── Phase 2: Build prompts (same as generateResponse) ──────────────
       onProgress({ stage: 'generating', message: 'Generating clinical synthesis...' });
 
@@ -6492,7 +6563,8 @@ Return ONLY a JSON array of 3 short question strings (no explanations, no markdo
         originalQuestion: question,
         standaloneQuestion,
         responseLanguage,
-        quickStats
+        quickStats,
+        gradeContext: gradeAssessment?.contextSummary || ''
       };
 
       const { systemPrompt, userMessage } = this.buildGenerateResponsePrompts(
@@ -6571,6 +6643,7 @@ Return ONLY a JSON array of 3 short question strings (no explanations, no markdo
         references,
         warnings,
         evidenceAdequacy,
+        gradeAssessment: gradeAssessment || null,
         articlesFound: articles.length,
         followUpQuestions: inlineFollowUps,
         metadata: {
@@ -6578,6 +6651,8 @@ Return ONLY a JSON array of 3 short question strings (no explanations, no markdo
           responseLanguage, questionType, questionClassification,
           contextArticles: contextArticles.length, quickStats,
           evidenceSelection: selectionTrace, evidenceAdequacy,
+          gradeAvailable: !!gradeAssessment,
+          gradeCertainty: gradeAssessment?.certainty_of_evidence || null,
           architecture: this.getArchitectureMetadata()
         }
       });

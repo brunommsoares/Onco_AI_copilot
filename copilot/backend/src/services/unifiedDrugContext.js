@@ -106,15 +106,18 @@ export function buildUnifiedDrugContext({
     }
   }
 
-  // Step 4: Populate from ESMO
+  // Step 4: Populate from the guideline corpus (ESMO and NCCN documents;
+  // each recommendation carries the publisher that actually issued it)
   if (esmo.available && esmo.recommendations?.length) {
     for (const rec of esmo.recommendations) {
       const substance = rec.drug || rec.drugName || '';
       if (!substance) continue;
       const card = getOrCreateCard(substance);
       if (!card) continue;
-      card.sources.add('ESMO');
+      const publisher = rec.publisher || 'Guideline';
+      card.sources.add(publisher);
       card.esmo.push({
+        publisher: rec.publisher || '',
         cancerType: rec.cancerType || rec.cancer_type || '',
         biomarker: rec.biomarker || '',
         lineOfTherapy: rec.lineOfTherapy || rec.line_of_therapy || '',
@@ -172,7 +175,7 @@ export function buildUnifiedDrugContext({
   scoredCards.sort((a, b) => b.score - a.score);
 
   // Step 7: Build unified context text — top 10 drug cards
-  const lines = ['=== UNIFIED REGULATORY & ACCESS DATA (cross-referenced from INFARMED, EMA, ESMO) ==='];
+  const lines = ['=== UNIFIED REGULATORY & ACCESS DATA (cross-referenced from INFARMED, EMA and the guideline corpus [ESMO/NCCN]) ==='];
   if (searchTerms.substance || searchTerms.cancerType) {
     lines.push(`Query: substance="${searchTerms.substance || ''}" cancer="${searchTerms.cancerType || ''}" biomarker="${searchTerms.biomarker || ''}" line="${searchTerms.lineOfTherapy || ''}"`);
   }
@@ -181,7 +184,7 @@ export function buildUnifiedDrugContext({
   const topCards = scoredCards.slice(0, 10);
 
   if (!topCards.length) {
-    lines.push('No regulatory data found for this query across INFARMED, EMA, or ESMO.');
+    lines.push('No regulatory data found for this query across INFARMED, EMA, or the guideline corpus.');
     lines.push('Do not make claims about European regulatory or Portuguese reimbursement status.');
   }
 
@@ -252,7 +255,7 @@ export function buildUnifiedDrugContext({
       lines.push('  INFARMED: No Portuguese reimbursement data found — confirm with INFARMED/hospital pharmacy');
     }
 
-    // ESMO recommendations
+    // Guideline recommendations (attributed to the issuing body: ESMO or NCCN)
     if (card.esmo.length) {
       for (const rec of card.esmo.slice(0, 3)) {
         const scores = [
@@ -261,9 +264,9 @@ export function buildUnifiedDrugContext({
           rec.esmoMcbs && `MCBS ${rec.esmoMcbs}`
         ].filter(Boolean).join(', ');
         const context = [rec.cancerType, rec.biomarker, rec.lineOfTherapy].filter(Boolean).join(' | ');
-        lines.push(`    • ESMO CPG: ${context}${scores ? ` [${scores}]` : ''}`);
+        lines.push(`    • ${rec.publisher || 'Guideline'} CPG: ${context}${scores ? ` [${scores}]` : ''}`);
         if (rec.recommendationText) lines.push(`      "${rec.recommendationText.slice(0, 200)}"`);
-        if (rec.guidelineTitle) lines.push(`      Source: ${rec.guidelineTitle}`);
+        if (rec.guidelineTitle) lines.push(`      Source: ${rec.publisher ? `${rec.publisher} — ` : ''}${rec.guidelineTitle}`);
       }
     }
 
@@ -315,7 +318,7 @@ export function buildUnifiedDrugContext({
   // Step 9: Instructions for the LLM
   lines.push('=== INSTRUCTIONS FOR USING THIS DATA ===');
   lines.push('1. Use ONLY this verified data for regulatory/reimbursement claims. Do not guess or infer from general knowledge.');
-  lines.push('2. When mentioning a drug, cross-reference all available sources (EMA + INFARMED + ESMO) in a coherent statement.');
+  lines.push('2. When mentioning a drug, cross-reference all available sources (EMA + INFARMED + guidelines) in a coherent statement, attributing each guideline recommendation to its stated issuing body (ESMO or NCCN).');
   lines.push('3. If a drug has PAP status, mention it PROMINENTLY — it means early access is available in Portugal via Programa de Acesso Precoce.');
   lines.push('4. If the approved line of therapy differs from the question, state the ACTUAL approved line clearly.');
   lines.push('5. If INFARMED lists MULTIPLE drugs for the queried indication, mention ALL of them.');

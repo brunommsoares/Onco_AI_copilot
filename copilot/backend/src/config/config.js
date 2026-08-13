@@ -151,7 +151,13 @@ const config = {
     corsOrigin: allowedOrigins,
     corsOrigins: allowedOrigins,
     enableHelmet: parseBoolean(process.env.ENABLE_HELMET, true),
-    enableCompression: parseBoolean(process.env.ENABLE_COMPRESSION, true)
+    enableCompression: parseBoolean(process.env.ENABLE_COMPRESSION, true),
+    // Clinical data routes (/api/simple-chat, /api/trial-registry, /api/ema,
+    // /api/infarmed-reimbursement, /api/esmo-guidelines) require a verified
+    // Firebase ID token unless this is true. Defaults to open in development
+    // so a clean clone works before Firebase Admin is configured; enforced in
+    // production.
+    publicDataRoutes: parseBoolean(process.env.PUBLIC_DATA_ROUTES, environment !== 'production')
   },
 
   // Feature flags
@@ -171,7 +177,12 @@ const config = {
     enableEma: parseBoolean(process.env.ENABLE_EMA, false),
     enableEsmoGuidelines: parseBoolean(process.env.ENABLE_ESMO_GUIDELINES, false),
     enableEpistemonikos: parseBoolean(process.env.ENABLE_EPISTEMONIKOS, false),
-    enableGradeAssessment: parseBoolean(process.env.ENABLE_GRADE_ASSESSMENT, false)
+    // GRADE certainty assessment is on by default: the assistant is designed to
+    // attach an explicit certainty rating to every evidence-based answer.
+    enableGradeAssessment: parseBoolean(process.env.ENABLE_GRADE_ASSESSMENT, true),
+    // Upper bound on the pre-synthesis GRADE call. On timeout the answer is
+    // generated without a certainty rating rather than being delayed.
+    gradeAssessmentTimeoutMs: Number(process.env.GRADE_ASSESSMENT_TIMEOUT_MS) || 12000
   },
 
   runtimeDiagnostics

@@ -173,6 +173,12 @@ class EsmoGuidelinesService {
         throw new Error('No text extracted — file may be image-based or empty');
       }
 
+      // Step 1c: Detect publisher. The corpus contains both ESMO and NCCN PDFs;
+      // recommendations must be attributed to the body that actually issued them.
+      guideline.publisher = this._detectPublisher(fullText, guideline.title);
+      await this._store.writeGuideline(guideline);
+      this._logger.info(`[ESMO] Publisher detected: ${guideline.publisher || 'unknown'}`);
+
       // Step 2: Chunk text
       const chunks = this._chunkText(fullText, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP);
       this._logger.info(`[ESMO] Split into ${chunks.length} chunks`);
@@ -322,6 +328,7 @@ class EsmoGuidelinesService {
           recommendationText: rec.recommendation_text || rec.recommendationText || '',
           guidelineTitle: rec.guideline_title || rec.guidelineTitle || '',
           guidelineVersion: rec.guideline_version || rec.guidelineVersion || '',
+          publisher: this._publisherFromRow(rec),
           confidence: rec.confidence || ''
         })),
         contextSummary,
@@ -345,7 +352,7 @@ class EsmoGuidelinesService {
       return '';
     }
 
-    const lines = ['=== ESMO GUIDELINE RECOMMENDATIONS (extracted from uploaded ESMO Clinical Practice Guidelines) ==='];
+    const lines = ['=== CLINICAL PRACTICE GUIDELINE RECOMMENDATIONS (extracted from the locally indexed guideline corpus: ESMO and NCCN documents) ==='];
     lines.push(`Query: drug="${searchTerms.drug}" cancer="${searchTerms.cancerType}" biomarker="${searchTerms.biomarker}" line="${searchTerms.lineOfTherapy}"`);
     lines.push('');
 
@@ -371,16 +378,47 @@ class EsmoGuidelinesService {
       if (loe) lines.push(`  Level of Evidence: ${loe}`);
       if (gor) lines.push(`  Grade of Recommendation: ${gor}`);
       if (text) lines.push(`  "${text}"`);
-      if (guidelineTitle) lines.push(`  Source: ${guidelineTitle}`);
+      const publisher = this._publisherFromRow(rec);
+      if (guidelineTitle) lines.push(`  Source: ${publisher ? `${publisher} — ` : ''}${guidelineTitle}`);
       lines.push('');
     }
 
-    lines.push('IMPORTANT: Cite ESMO guideline recommendations when relevant. Include LOE, GOR, and ESMO-MCBS scores.');
+    lines.push('IMPORTANT: Cite these guideline recommendations when relevant, attributing each to the issuing body shown in its Source line (ESMO or NCCN) — never attribute an NCCN recommendation to ESMO or vice versa. Include LOE, GOR, and ESMO-MCBS scores where present.');
 
     return lines.join('\n');
   }
 
   // ---- helpers -------------------------------------------------------------
+
+  /**
+   * Identify the guideline's issuing body from the document text.
+   * Phrase matches are checked before bare acronyms because an ESMO guideline
+   * can cite NCCN in passing (and vice versa).
+   */
+  _detectPublisher(text = '', title = '') {
+    const head = `${title}\n${String(text).slice(0, 8000)}`;
+    if (/national comprehensive cancer network|NCCN (?:clinical practice )?guidelines/i.test(head)) return 'NCCN';
+    if (/european society for medical oncology|ESMO (?:clinical practice|living) guideline/i.test(head)) return 'ESMO';
+    if (/\bNCCN\b/.test(head)) return 'NCCN';
+    if (/\bESMO\b/.test(head)) return 'ESMO';
+    return '';
+  }
+
+  /**
+   * Publisher for a store row, read from the guideline's payload JSON
+   * (populated at ingest by _detectPublisher, or by scripts/fixGuidelinePublishers.mjs
+   * for guidelines ingested before publisher detection existed).
+   */
+  _publisherFromRow(rec) {
+    if (rec.publisher) return rec.publisher;
+    const raw = rec.guideline_payload || rec.guidelinePayload;
+    if (!raw) return '';
+    try {
+      return JSON.parse(raw).publisher || '';
+    } catch {
+      return '';
+    }
+  }
 
   _chunkText(text, chunkSize = DEFAULT_CHUNK_SIZE, overlap = DEFAULT_CHUNK_OVERLAP) {
     const words = text.split(/\s+/);

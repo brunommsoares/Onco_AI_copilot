@@ -18,6 +18,7 @@ import { logger } from './utils/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
+import { dataRouteAuth } from './middleware/dataRouteAuth.js';
 import { firebaseApp } from './config/firebase.js';
 
 import authRoutes from './routes/auth.js';
@@ -138,16 +139,18 @@ app.use('/api/evidence', authMiddleware, evidenceRoutes);
 app.use('/api/search', authMiddleware, searchRoutes);
 app.use('/api/user', authMiddleware, userRoutes);
 app.use('/api/analytics', authMiddleware, analyticsRoutes);
-app.use('/api/simple-chat', simpleChatRoutes);
+// Clinical data routes require a verified Firebase ID token
+// (dataRouteAuth; opt out with PUBLIC_DATA_ROUTES=true)
+app.use('/api/simple-chat', dataRouteAuth, simpleChatRoutes);
 // Legacy alias — redirect /api/chat to /api/simple-chat
-app.use('/api/chat', (req, res, next) => {
+app.use('/api/chat', dataRouteAuth, (req, res, next) => {
   req.url = req.url; // preserve URL
   simpleChatRoutes(req, res, next);
 });
-app.use('/api/trial-registry', trialRegistryRoutes);
-app.use('/api/infarmed-reimbursement', infarmedReimbursementRoutes);
-app.use('/api/ema', emaRoutes);
-app.use('/api/esmo-guidelines', esmoGuidelinesRoutes);
+app.use('/api/trial-registry', dataRouteAuth, trialRegistryRoutes);
+app.use('/api/infarmed-reimbursement', dataRouteAuth, infarmedReimbursementRoutes);
+app.use('/api/ema', dataRouteAuth, emaRoutes);
+app.use('/api/esmo-guidelines', dataRouteAuth, esmoGuidelinesRoutes);
 
 // Production: serve built React frontend as static files
 if (config.server.environment === 'production') {
